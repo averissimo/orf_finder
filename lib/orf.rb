@@ -7,7 +7,7 @@ require_relative 'orf_finder'
 #
 class ORF
   #
-  include ORFCommon
+  include ORF::ORFCommon
   #
   #
   attr_reader :logger, :options, :seq, :sequence
@@ -23,7 +23,7 @@ class ORF
       @logger = logger_file.clone
     end
     logger.progname = 'ORFCommon'
-    logger.level    = (options[:debug] ? Logger::INFO : Logger::UNKNOWN)
+    logger.level    = (options[:debug] ? Logger::INFO : Logger::ERROR)
     #
     sequence = Bio::Sequence::NA.new(sequence) if sequence.class == String
     @sequence = sequence
@@ -32,6 +32,7 @@ class ORF
     self.options = ORFFinder::DEFAULT_OPTIONS.merge(options.nil? ? {} : options)
 
     logger.info 'ORF has been initialized'
+    find
   end
 
   #
@@ -64,7 +65,7 @@ class ORF
 
   #
   #
-  #
+  # finds all possible orfs in sequence
   def find
     # if sequence is nil or empty there is no point
     #  in trying to run the find algorithm
@@ -72,9 +73,9 @@ class ORF
     #
     orf = { frame1: {}, frame2: {}, frame3: {} }
     #
-    start_idx = lookup_codons_idx(:start)
-    stop_idx  = lookup_codons_idx(:stop)
-    res       = get_longest(start_idx, stop_idx, seq.size, [0, 1, 2])
+    start_idx = all_codons_indices(:start)
+    stop_idx  = all_codons_indices(:stop)
+    res       = all_sequences(start_idx, stop_idx, seq.size, [0, 1, 2])
     #
     logger.info "start codons idx: #{start_idx}"
     logger.info "stop codons idx: #{stop_idx}"
@@ -152,9 +153,9 @@ class ORF
   end
 
   #
-  # Find all indexes for valid codons (either for :start
-  #  or :stop)
-  def lookup_codons_idx(option_name)
+  # Find all indexes for valid codons
+  #  (either for :start or :stop)
+  def all_codons_indices(option_name)
     idxs = []
     option_name = option_name.to_sym
     # if start option does not exist, then should
@@ -182,7 +183,7 @@ class ORF
   # because of a bug the start flag must be given
   #  indicating if it is looking for start or stop
   #  codons in frame
-  def get_frame_idxs(idxs, frame, start = true)
+  def filter_codons_by_frame(idxs, frame, start = true)
     idxs.collect do |i|
       if start && (i - frame) % 3 == 0
         i
@@ -195,7 +196,7 @@ class ORF
   #
   # from the combination of start and stop indexes, find
   #  the longest one
-  def decide_longest(start_idxs, stop_idxs, frame, seq_size)
+  def valid_sequences_by_frame(start_idxs, stop_idxs, frame, seq_size)
     #
     seq_size -= (seq_size - frame) % 3
     start = start_idxs.clone
@@ -214,14 +215,16 @@ class ORF
     valid = []
     fallback = []
     # iterate on each start codon
-    determine_valid_ranges({ start: start, stop: stop },
-                           { valid: valid, fallback: fallback },
-                           seq_size,
-                           frame,
-                           start_idxs.empty? || stop_idxs.empty?)
+    sequences_in_frame({ start: start, stop: stop },
+                       { valid: valid, fallback: fallback },
+                       seq_size,
+                       frame,
+                       start_idxs.empty? || stop_idxs.empty?)
     if valid.empty?
       valid = fallback.uniq.collect do |r|
-        if get_range_str(r[:start], r[:stop], false).size == size_of_frame(frame)
+        if get_range_str(r[:start],
+                         r[:stop],
+                         false).size == size_of_frame(frame)
           nil
         else
           r
@@ -237,7 +240,7 @@ class ORF
   # given star and stop codons indexes, decide which are the valid
   #  sequence for an orf
   # TODO: reject sequences that have a stop codon in them
-  def determine_valid_ranges(idxs, arrays, seq_size, frame, added_pos)
+  def sequences_in_frame(idxs, arrays, seq_size, frame, added_pos)
     start = idxs[:start]
     stop  = idxs[:stop]
     arr   = []
@@ -284,16 +287,20 @@ class ORF
     end
   end
 
-  def get_longest(start_idx, stop_idx, seq_size, read_frame = [0, 1, 2])
+  #
+  #
+  #
+  def all_sequences(start_idx, stop_idx, seq_size, read_frame = [0, 1, 2])
     #
     start = [[], [], []]
     stop  = [[], [], []]
     valid = []
     read_frame.each do |frame|
-      start[frame] = get_frame_idxs(start_idx, frame, true)
-      stop[frame]  = get_frame_idxs(stop_idx, frame,  false)
-      valid << decide_longest(start[frame], stop[frame],
-                              frame, seq_size)
+      start[frame] = filter_codons_by_frame(start_idx, frame, true)
+      stop[frame]  = filter_codons_by_frame(stop_idx, frame,  false)
+      valid << valid_sequences_by_frame(start[frame],
+                                        stop[frame],
+                                        frame, seq_size)
     end
     #
     valid
