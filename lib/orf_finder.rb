@@ -10,7 +10,6 @@ class ORFFinder
                       reverse: true,
                       direct: true,
                       min: 6,
-                      default_to_seq: false,
                       debug: false }
 
   def initialize(sequence, options = {}, logger = nil)
