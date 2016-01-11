@@ -1,0 +1,123 @@
+#
+# This allows to test if the different configurations
+#  work, as the default config is inherited to each test
+#  and can be changed easily without having to repeat the
+#  configuration
+default_config: &default
+  start:
+    - atg
+  stop:
+    - tag
+    - taa
+    - tga
+  reverse: true
+  direct: true
+  min: 6
+  default_to_seq: false
+  debug: false
+
+#
+# Each element of test array is a test suite, designed to
+#  give the configuration for ORF instance, the input and output
+#  of the ORF in nucleotide
+#
+# note: we don't test the aminoacid sequence, as it belongs to
+#  a different gem.
+:test:
+  -
+    :config:
+      <<: *default
+    :input: atgaaataa
+    :output:
+      :frame1: 'atgaaataa' # ORF that was found is atgaaa with stop codon taa
+                          #  atg at the beggining is considered a intermediate
+      :frame2: ''
+      :frame3: ''
+  -
+    :config:
+      <<: *default
+    :input: aaaatgcaaataaaataa
+    :output:
+      :frame1: 'atgcaaataaaataa'
+      :frame2: 'aaatgcaaataa'
+      :frame3: ''
+  - # stop codon immediatlt after start codon
+    :config:
+      <<: *default
+    :input: aaaatgtaaaaataaaaa
+    :output:
+      :frame1: 'aaaatgtaa' # again, atg is considered an intermediate
+      :frame2: ''
+      :frame3: ''
+  -
+    :config:
+      <<: *default
+    :input: aaaatgaaataataaaaa
+    :output:
+      :frame1: 'aaaatgaaataa'
+      :frame2: ''
+      :frame3: ''
+  -
+    :config:
+      <<: *default
+    :input: aaaatgaaaaaaatgtaataataataaaaa
+    :output:
+      :frame1: atgaaaaaaatgtaa
+      :frame2: ''
+      :frame3: ''
+  -
+    :config:
+      <<: *default
+    :input: aaaaaaaaataataataataaaaa
+    :output:
+      :frame1: aaaaaaaaataa
+      :frame2: ''
+      :frame3: ''
+  -
+    :config:
+      <<: *default
+    :input: aaaatgaaaaaaatgtaaaaa
+    :output:
+      :frame1: atgaaaaaaatgtaa
+      :frame2: ''
+      :frame3: ''
+  -
+    :config:
+      <<: *default
+    :input: aaaaaaaaaaaaaaa
+    :output:
+      :frame1: ''
+      :frame2: ''
+      :frame3: ''
+  -
+    :config:
+      <<: *default
+    :input: aaaaaaaaatgaaaaa
+    :output:
+      :frame1: 'aaaaaaaaatga'
+      :frame2: ''
+      :frame3: ''
+  -
+    :config:
+      <<: *default
+    :input: aaaaaaaatgaaaa
+    :output:
+      :frame1: ''
+      :frame2: ''
+      :frame3: 'aaaaaatga'
+  -
+    :config:
+      <<: *default
+    :input: aaaatgaaaaaataaataa
+    :output:
+      :frame1: 'atgaaaaaataa'
+      :frame2: ''
+      :frame3: ''
+  -
+    :config:
+      <<: *default
+    :input: aaaatcgaaaataaaataa
+    :output:
+      :frame1: ''
+      :frame2: 'aaatcgaaaataaaataa'
+      :frame3: 'aatcgaaaataa'
