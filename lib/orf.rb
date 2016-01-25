@@ -11,7 +11,7 @@ class ORF
   #
   DEFAULT_CODON_TABLE = 1
   #
-  attr_reader :logger, :options, :seq, :sequence, :codon_table
+  attr_reader :logger, :options, :seq, :sequence
   attr_writer :options
   #
   # class initializer that normalizes sequence to Bio::Sequence,

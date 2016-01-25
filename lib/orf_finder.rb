@@ -5,6 +5,8 @@ require_relative 'orf'
 # Wrapper class that processes the direct and reverse sequences
 class ORFFinder
   #
+  attr_reader :codon_table
+  #
   DEFAULT_OPTIONS = { start: %w(atg),
                       stop:  %w(tag taa tga),
                       reverse: true,
@@ -20,10 +22,11 @@ class ORFFinder
     @output = {}
     @output[:direct] = ORF.new(sequence, options, logger) if options[:direct]
     #
-    return unless options[:reverse]
-    compl = sequence.complement
-    @output[:reverse] = ORF.new(compl, options, logger)
-
+    if options[:reverse]
+      compl = sequence.complement
+      @output[:reverse] = ORF.new(compl, options, logger)
+    end
+    #
     @codon_table = codon_table
   end
 
