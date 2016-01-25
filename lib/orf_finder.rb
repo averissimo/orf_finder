@@ -18,9 +18,16 @@ class ORFFinder
     options = DEFAULT_OPTIONS.merge(options.nil? ? {} : options)
     #
     @output = {}
-    @output[:direct]  = ORF.new(sequence, options, logger) if options[:direct]
-    @output[:reverse] = ORF.new(sequence.complement, options, logger) \
-      if options[:reverse]
+    if options[:direct]
+      @output[:direct]       = ORF.new(sequence, options, logger)
+      @output[:direct][:seq] = sequence
+    end
+    #
+    if options[:reverse]
+      compl = sequence.complement
+      @output[:reverse]       = ORF.new(compl, options, logger)
+      @output[:reverse][:seq] = compl
+    end
   end
 
   def nt
