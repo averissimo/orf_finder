@@ -12,7 +12,7 @@ class ORFFinder
                       min: 6,
                       debug: false }
 
-  def initialize(sequence, options = {}, logger = nil)
+  def initialize(sequence, codon_table = 1, options = {}, logger = nil)
     #
     sequence = Bio::Sequence::NA.new(sequence) if sequence.class == String
     options = DEFAULT_OPTIONS.merge(options.nil? ? {} : options)
@@ -23,12 +23,14 @@ class ORFFinder
     return unless options[:reverse]
     compl = sequence.complement
     @output[:reverse] = ORF.new(compl, options, logger)
+
+    @codon_table = codon_table
   end
 
   def nt
     res = {}
     @output.each do |key, value|
-      res[key] = value.nt
+      res[key] = value.nt(@codon_table)
       res[key][:sequence] = value.seq
     end
     res
@@ -37,8 +39,8 @@ class ORFFinder
   def aa
     res = {}
     @output.each do |key, value|
-      res[key] = value.aa
-      res[key][:sequence] = value.sequence.translate.to_s
+      res[key] = value.aa(@codon_table)
+      res[key][:sequence] = value.sequence.translate(@codon_table).to_s
     end
     res
   end

@@ -9,10 +9,11 @@ class ORF
   #
   include ORF::ORFCommon
   #
+  DEFAULT_CODON_TABLE = 1
   #
-  attr_reader :logger, :options, :seq, :sequence
+  attr_reader :logger, :options, :seq, :sequence, :codon_table
   attr_writer :options
-
+  #
   # class initializer that normalizes sequence to Bio::Sequence,
   #  merges given options and creates logger
   def initialize(sequence, options = {}, logger_file = nil)
@@ -47,20 +48,20 @@ class ORF
 
   #
   # return aminoacid sequence
-  def aa
+  def aa(codon_table = DEFAULT_CODON_TABLE)
     # return already generated aa sequence
     return @res_aa unless @res_aa.nil?
     # save result
-    l = longest
+    l = longest(codon_table)
     return l if @res_aa.nil?
     @res_aa
   end
 
   #
   # return nucletotide sequence
-  def nt
+  def nt(codon_table = DEFAULT_CODON_TABLE)
     return @res_nt unless @res_nt.nil?
-    longest
+    longest(codon_table)
   end
 
   #
@@ -128,7 +129,7 @@ class ORF
   #
   # get the longest sequence in each frame and translate
   #  to aminoacid
-  def longest
+  def longest(codon_table = DEFAULT_CODON_TABLE)
     # run find method if search has not been done
     find if @orf.nil?
     #
@@ -144,7 +145,11 @@ class ORF
     # translate to aa sequence
     unless @res_nt.nil?
       @res_nt.each do |key, val|
-        res_aa[key] = val.translate
+        res_aa[key] = if val.nil? || val.empty?
+                        ''
+                      else
+                        val.translate(1, codon_table)
+                      end
       end
     end
     @res_aa = res_aa
