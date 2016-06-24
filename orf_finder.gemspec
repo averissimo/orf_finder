@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name        = 'orf_finder'
-  s.version     = '0.1.3'
-  s.date        = '2016-01-25'
+  s.version     = '0.1.7'
+  s.date        = '2016-06-24'
   s.summary     = 'Finds the longest orfs in a nucleotide sequence.'
   s.description = <<-EOF
     ORF Finder is a library that with a sequence of nucletotides it

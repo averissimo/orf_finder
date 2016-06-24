@@ -1,5 +1,4 @@
 require 'bio'
-
 require_relative 'orf_common'
 require_relative 'orf_finder'
 #
@@ -31,7 +30,6 @@ class ORF
     @seq = @sequence.to_s
     #
     self.options = ORFFinder::DEFAULT_OPTIONS.merge(options.nil? ? {} : options)
-
     logger.info 'ORF has been initialized'
     find
   end
@@ -112,15 +110,18 @@ class ORF
         frame_val << range
       end
     end
-    # hash name
+    #
     hash_name = frame_sym(index)
     orf[hash_name][:orfs] = (frame_val.empty? ? frame_fal : frame_val)
-    longest = { len: nil, range: nil }
+    #
+    longest = { len: nil, range: [] }
     orf[hash_name][:orfs].each do |range|
       len = range[:stop] - range[:start] + 1
-      if longest[:range].nil? || len > longest[:len]
+      if longest[:range].nil? || longest[:range].empty? || len > longest[:len]
         longest[:len]   = len
-        longest[:range] = range
+        longest[:range] = [range]
+      elsif len == longest[:len]
+        longest[:range] << range
       end
     end
     orf[hash_name][:longest] = longest[:range]
@@ -133,22 +134,25 @@ class ORF
     # run find method if search has not been done
     find if @orf.nil?
     #
-    res_nt = { frame1: '', frame2: '', frame3: '' }
+    res_nt = { frame1: [''], frame2: [''], frame3: [''] }
     res_aa = res_nt.clone
     # if @orf is empty then no point in continuing
     return res_nt if @orf.nil? || @orf.size == 0
     # for each orf get the longest sequence
     @orf.each do |key, val|
-      res_nt[key] = get_range(val[:longest])
+      res_nt[key] = val[:longest].collect do |el|
+        get_range(el)
+      end
+      res_nt[key] = [Bio::Sequence::NA.new('')] if res_nt[key].empty?
     end
     @res_nt = res_nt
     # translate to aa sequence
     unless @res_nt.nil?
       @res_nt.each do |key, val|
         res_aa[key] = if val.nil? || val.empty?
-                        ''
+                        ['']
                       else
-                        val.translate(1, codon_table)
+                        val.collect { |el| el.translate(1, codon_table) }
                       end
       end
     end
